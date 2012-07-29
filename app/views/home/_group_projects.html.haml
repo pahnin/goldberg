@@ -1,8 +1,8 @@
 #all-projects
-  -if grouped_projects.keys.size == 0 #no projects to build
+  -if grouped_projects.keys.empty?
     %span.noprojects
-      %h4 
-        ="no projects added yet!? add through using 'bin/goldberg'"
+      %h4
+        = t(:no_projects)
   - elsif grouped_projects.keys.size == 1 && grouped_projects.keys.first == 'default'
     = render :partial => 'projects', :locals => { :projects => grouped_projects['default'] }
   - else

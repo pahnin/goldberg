@@ -8,13 +8,12 @@
       $.ajax({
         type: "GET",
         url: '#{params[:group_name] ? projects_partial_for_group_path(params[:group_name]) : projects_partial_path}',
-        error: function(xhr, statusText) { 
+        error: function(xhr, statusText) {
           $('.error').remove();
-          $('#all-projects').append("<p class='error'>connection to server failed, status was last updated at "+$time+".</p>"); 
+          $('#all-projects').append("<p class='error'>connection to server failed, status was last updated at " + $time + ".</p>");
         },
-        success: function(response){  
+        success: function(response){
           $('.error').remove();
-          $time=new Date();
           $('#all-projects').remove();
           $('.page').append(response);
         }
