@@ -20,7 +20,7 @@ module Scm
       end
 
       def authors(versions)
-      	"hg log -r #{versions.join(':')} | grep user| awk '{print \"format:$2\"}'"
+      	"hg log -r #{versions.join(':')} | grep user| awk '{print \"format:\"$2}'"
       end
     end
   end
