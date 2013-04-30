@@ -12,6 +12,12 @@ class Build < ActiveRecord::Base
 
   default_scope order('number DESC')
 
+  def self.per_page
+    50
+  end
+
+  paginates_per per_page
+
   def self.null
     OpenStruct.new(:number => 0, :status => 'not available', :revision => '', :nil_build? => true, :timestamp => nil, :build_log => '', :artefacts => [])
   end
@@ -52,24 +58,21 @@ class Build < ActiveRecord::Base
   end
 
   def execute_async(command)
-    start_time = DateTime.now
     command = Command.new(command)
     command.fork
-    while (!exceeded_timeout?(start_time) && command.running? && !reload.cancelled?)
+    while (!exceeded_timeout?(command.start_time) && command.running? && !reload.cancelled?)
       sleep(10)
     end
     if cancelled?
       command.stop_tree
       Goldberg.logger.info "Cancelled pid #{command.pid}, build no #{number} of #{project.name}, #{command.stopped?}"
-    end
-    if exceeded_timeout?(start_time)
+    elsif exceeded_timeout?(command.start_time)
       command.stop_tree
       Goldberg.logger.error "Timeout (#{project.timeout})- killing #{command.pid}:#{command.cmd}"
-      self.status = 'timeout'
-    elsif !cancelled?
-      self.status = command.success? ? 'passed' : 'failed'
+      update_attributes(status: 'timeout')
+    else
+      update_attributes(status: command.success? ? 'passed' : 'failed')
     end
-    save
   end
 
   def exceeded_timeout?(start_time)
@@ -110,7 +113,15 @@ class Build < ActiveRecord::Base
   end
 
   def cancel
-    update_attribute(:status, 'cancelled')
+    update_attributes(:status => 'cancelled')
+  end
+
+  def duration
+    if building?
+      Time.now - created_at
+    else
+      updated_at - created_at
+    end
   end
 
   ['timeout', 'cancelled', 'passed', 'failed', 'building', ].each do |status|

@@ -138,13 +138,13 @@ describe Build do
     end
 
     it "sets build status to failed if the build command succeeds" do
-      Command.stub(:new).and_return(mock(Command, :execute => true, :running? => false, :fork => nil, :success? => true))
+      Command.stub(:new).and_return(mock(Command, :execute => true, :running? => false, :fork => nil, :success? => true, :start_time => DateTime.now))
       build.run
       build.status.should == "passed"
     end
 
     it "sets build status to failed if the build command fails" do
-      Command.stub(:new).and_return(mock(:command, :execute => true, :running? => false, :fork => nil, :success? => false))
+      Command.stub(:new).and_return(mock(:command, :execute => true, :running? => false, :fork => nil, :success? => false, :start_time => DateTime.now))
       build.run
       build.status.should == "failed"
     end
@@ -178,5 +178,27 @@ describe Build do
     build = FactoryGirl.create(:build)
     build.cancel
     build.should be_cancelled
+  end
+
+  describe "duration" do
+    before(:each) do
+      @now = Time.now
+      Time.stub(:now).and_return(@now)
+    end
+
+    it "calculates the build's duration as being between created_at & updated_at" do
+      build = FactoryGirl.create(:build, status: 'building')
+      build.update_column(:created_at, @now - 3.minutes)
+      expect(build.duration.to_i).to eq(3.minutes.to_i)
+    end
+
+    ['passed', 'failed', 'timeout', 'cancelled'].each do |status|
+      it "calculates the build's duration when the status is #{status} to be time to now" do
+        build = FactoryGirl.create(:build, status: status)
+        build.update_column(:updated_at, @now - 2.days)
+        build.update_column(:created_at, @now - 3.days)
+        expect(build.duration.to_i).to eq(1.day.to_i)
+      end
+    end
   end
 end

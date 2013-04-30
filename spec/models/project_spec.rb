@@ -81,9 +81,9 @@ describe Project do
     [:timestamp].each do |field|
       it "delegates last_complete_build_#{field} to the last complete build" do
         project = FactoryGirl.create(:project)
-        FactoryGirl.create(:build, :project => project, :number => 4, :status => 'passed').update_attribute(:created_at, 2.days.ago)
-        FactoryGirl.create(:build, :project => project, :number => 5, :status => 'building').update_attribute(:created_at, 1.day.ago)
-        FactoryGirl.create(:build, :project => project, :number => 5, :status => 'cancelled').update_attribute(:created_at, Date.today)
+        FactoryGirl.create(:build, :project => project, :number => 4, :status => 'passed').update_attributes(:created_at => 2.days.ago)
+        FactoryGirl.create(:build, :project => project, :number => 5, :status => 'building').update_attributes(:created_at => 1.day.ago)
+        FactoryGirl.create(:build, :project => project, :number => 5, :status => 'cancelled').update_attributes(:created_at => Date.today)
         project.last_complete_build_status.to_s.should == 'passed'
       end
     end
@@ -447,6 +447,14 @@ describe Project do
 
     it "detects an http url" do
       FactoryGirl.create(:project, :url => 'http://github.com/some_user/some_repo.git').github_url.should == 'http://github.com/some_user/some_repo'
+    end
+
+    it "detects an https url" do
+      FactoryGirl.create(:project, :url => 'https://github.com/some_user/some_repo.git').github_url.should == 'https://github.com/some_user/some_repo'
+    end
+
+    it "detects ssh accessed url" do
+      FactoryGirl.create(:project, :url => 'git@github.com:some_user/some_repo.git').github_url.should == 'http://github.com/some_user/some_repo'
     end
   end
 end
